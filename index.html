@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeoFounder — Cálculo de Fundações Profundas</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════════ */
+:root {
+  --blue-900:#0d2344;--blue-800:#1a3a6e;--blue-700:#1e4d94;
+  --blue-600:#1e63c3;--blue-500:#2979f5;--blue-400:#4f9aff;
+  --blue-300:#82bbff;--blue-200:#bdd8ff;--blue-100:#deeaff;--blue-50:#f0f6ff;
+  --amber-100:#fef3c7;--amber-50:#fffbeb;--amber-700:#b45309;
+  --red-500:#ef4444;--red-100:#fee2e2;
+  --green-600:#16a34a;--green-100:#dcfce7;
+  --white:#fff;--gray-50:#f8fafc;--gray-100:#f1f5f9;--gray-200:#e2e8f0;
+  --gray-300:#cbd5e1;--gray-400:#94a3b8;--gray-500:#64748b;--gray-600:#475569;
+  --text-primary:#0f1e35;--text-secondary:#475569;--text-muted:#94a3b8;
+  --border:#e2e8f0;--surface:#fff;--surface-2:#f8fafc;
+  --shadow-sm:0 1px 3px rgba(15,30,53,.07),0 1px 2px rgba(15,30,53,.04);
+  --shadow-md:0 4px 16px rgba(15,30,53,.09),0 2px 6px rgba(15,30,53,.05);
+  --shadow-lg:0 12px 40px rgba(15,30,53,.12),0 4px 12px rgba(15,30,53,.06);
+  --shadow-blue:0 4px 20px rgba(41,121,245,.28);
+  --radius:14px;--radius-sm:8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--gray-100);min-height:100vh;color:var(--text-primary);overflow-x:hidden;}
+
+/* ══════════════════════════════════════
+   SHARED — HEADER
+══════════════════════════════════════ */
+header{display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:64px;background:var(--blue-900);position:sticky;top:0;z-index:200;box-shadow:0 2px 14px rgba(10,22,40,.20);}
+.logo{display:flex;align-items:center;gap:12px;text-decoration:none;cursor:pointer;background:none;border:none;}
+.logo-icon{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--blue-400),var(--blue-600));display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-blue);flex-shrink:0;}
+.logo-icon svg{width:19px;height:19px;}
+.logo-text{font-size:17px;font-weight:800;letter-spacing:-.4px;color:#fff;}
+.logo-text span{color:var(--blue-300);}
+.header-right{display:flex;align-items:center;gap:12px;}
+.header-badge{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:var(--blue-200);background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);padding:4px 11px;border-radius:20px;white-space:nowrap;}
+.btn-back{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:rgba(255,255,255,.7);cursor:pointer;background:none;border:none;transition:color .15s;padding:0;}
+.btn-back:hover{color:#fff;}
+.btn-back svg{width:15px;height:15px;}
+
+/* ══════════════════════════════════════
+   SHARED — TOAST
+══════════════════════════════════════ */
+.toast{position:fixed;bottom:26px;right:26px;z-index:9999;background:var(--blue-800);border:1px solid rgba(79,154,255,.3);border-radius:12px;padding:13px 18px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-lg);font-size:13px;color:#fff;font-weight:600;opacity:0;transform:translateY(14px);transition:all .3s cubic-bezier(.34,1.56,.64,1);pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast svg{width:16px;height:16px;color:var(--blue-300);flex-shrink:0;}
+
+/* ══════════════════════════════════════
+   SHARED — CARD
+══════════════════════════════════════ */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;}
+
+/* ══════════════════════════════════════
+   SHARED — BUTTONS
+══════════════════════════════════════ */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:var(--radius-sm);font-family:'Plus Jakarta Sans',sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;border:none;transition:all .18s;}
+.btn svg{width:14px;height:14px;flex-shrink:0;}
+.btn-primary{background:linear-gradient(135deg,var(--blue-500),var(--blue-700));color:#fff;box-shadow:var(--shadow-blue);}
+.btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px);}
+.btn-ghost{background:var(--white);color:var(--gray-600);border:1.5px solid var(--border);}
+.btn-ghost:hover{background:var(--gray-50);}
+
+/* ══════════════════════════════════════
+   ANIMATIONS
+══════════════════════════════════════ */
+.fade-up{animation:fadeUp .5s cubic-bezier(.22,1,.36,1) both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.delay-1{animation-delay:.06s}.delay-2{animation-delay:.13s}.delay-3{animation-delay:.20s}
+.d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.16s}.d4{animation-delay:.22s}
+
+/* ══════════════════════════════════════
+   PAGE SHELL
+══════════════════════════════════════ */
+.page{display:flex;flex-direction:column;min-height:100vh;}
+.page-hidden{display:none!important;}
+
+/* ══════════════════════════════════════
+   HOME — MAIN
+══════════════════════════════════════ */
+#page-home main{flex:1;max-width:1180px;width:100%;margin:0 auto;padding:40px 40px 64px;display:flex;flex-direction:column;gap:26px;}
+.page-title-block{display:flex;flex-direction:column;gap:5px;}
+.page-eyebrow{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;letter-spacing:1.8px;text-transform:uppercase;color:var(--blue-600);}
+.page-title{font-size:27px;font-weight:800;letter-spacing:-.7px;color:var(--text-primary);line-height:1.15;}
+.page-subtitle{font-size:14px;color:var(--text-muted);font-weight:400;margin-top:2px;}
+
+/* card header / body */
+.card-header{display:flex;align-items:center;gap:11px;padding:20px 26px 17px;border-bottom:1px solid var(--border);background:var(--surface-2);}
+.card-header-icon{width:32px;height:32px;border-radius:8px;background:var(--blue-50);border:1px solid var(--blue-100);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.card-header-icon svg{width:16px;height:16px;color:var(--blue-600);}
+.card-header-title{font-size:14px;font-weight:700;color:var(--text-primary);}
+.card-header-sub{font-size:12px;color:var(--text-muted);margin-top:1px;}
+.card-body{padding:26px;}
+
+/* form */
+.form-grid{display:grid;gap:18px;}
+.form-grid-2{grid-template-columns:1fr 1fr;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-label{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--blue-700);}
+.form-input,.form-select{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 13px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13.5px;font-weight:500;color:var(--text-primary);transition:border-color .18s,box-shadow .18s;outline:none;width:100%;}
+.form-input::placeholder{color:var(--gray-400);font-weight:400;}
+.form-input:focus,.form-select:focus{border-color:var(--blue-500);box-shadow:0 0 0 3px rgba(41,121,245,.12);}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%231e4d94' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-color:var(--white);padding-right:36px;cursor:pointer;}
+.form-select option{background:#fff;color:var(--text-primary);}
+
+/* number stepper */
+.input-number-group{display:flex;align-items:center;border:1.5px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;background:var(--white);transition:border-color .18s,box-shadow .18s;max-width:160px;}
+.input-number-group:focus-within{border-color:var(--blue-500);box-shadow:0 0 0 3px rgba(41,121,245,.12);}
+.num-btn{width:40px;height:42px;flex-shrink:0;background:var(--blue-50);border:none;cursor:pointer;color:var(--blue-600);font-size:20px;font-weight:400;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.num-btn:hover{background:var(--blue-100);}
+.num-input{flex:1;background:transparent;border:none;outline:none;font-family:'DM Mono',monospace;font-size:16px;font-weight:500;color:var(--text-primary);text-align:center;padding:0;}
+
+/* bloco input */
+.bloco-input-wrap{position:relative;}
+.bloco-input-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--blue-500);display:flex;align-items:center;pointer-events:none;}
+.bloco-input-icon svg{width:15px;height:15px;}
+.bloco-input{padding-left:36px!important;font-weight:600!important;}
+.field-hint{font-size:12px;color:var(--text-muted);margin-top:5px;}
+
+/* actions */
+.form-actions{display:flex;gap:10px;justify-content:flex-end;}
+.home-btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:var(--radius-sm);font-family:'Plus Jakarta Sans',sans-serif;font-size:13.5px;font-weight:700;cursor:pointer;border:none;transition:all .18s;text-decoration:none;}
+.home-btn svg{width:15px;height:15px;flex-shrink:0;}
+.home-btn-primary{background:linear-gradient(135deg,var(--blue-500),var(--blue-700));color:#fff;box-shadow:var(--shadow-blue);}
+.home-btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 6px 22px rgba(41,121,245,.38);}
+.home-btn-secondary{background:var(--white);color:var(--gray-600);border:1.5px solid var(--border);box-shadow:var(--shadow-sm);}
+.home-btn-secondary:hover{background:var(--gray-50);border-color:var(--gray-300);}
+
+/* status bar */
+.status-bar{display:flex;align-items:center;gap:8px;padding:9px 16px;background:var(--blue-50);border:1.5px solid var(--blue-200);border-radius:9px;font-size:12.5px;color:var(--blue-700);font-weight:600;}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--blue-500);flex-shrink:0;box-shadow:0 0 6px rgba(41,121,245,.5);animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* modules grid */
+.modules-section{display:flex;flex-direction:column;gap:12px;}
+.modules-heading{font-size:11.5px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--text-muted);padding-left:2px;}
+.modules-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.module-btn{position:relative;display:flex;flex-direction:column;gap:10px;padding:17px 16px 15px;border-radius:var(--radius);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;text-decoration:none;transition:all .2s;overflow:hidden;box-shadow:var(--shadow-sm);}
+.module-btn::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue-500),var(--blue-400));opacity:0;transition:opacity .2s;}
+.module-btn:hover{border-color:var(--blue-300);box-shadow:var(--shadow-md);transform:translateY(-2px);}
+.module-btn:hover::before{opacity:1;}
+.module-btn:hover .module-icon{background:var(--blue-50);border-color:var(--blue-200);}
+.module-btn:hover .module-arrow{opacity:1;transform:translateX(0);}
+.module-btn.disabled{opacity:.48;cursor:not-allowed;pointer-events:none;background:var(--surface-2);}
+.module-btn.module-active::before{opacity:1;}
+.module-btn.module-active{border-color:var(--blue-300);}
+.module-icon{width:36px;height:36px;border-radius:9px;background:var(--gray-100);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;transition:background .2s,border-color .2s;}
+.module-icon svg{width:17px;height:17px;}
+.module-label{font-size:12.5px;font-weight:700;color:var(--text-primary);line-height:1.3;}
+.module-desc{font-size:11px;color:var(--text-muted);font-weight:400;line-height:1.4;margin-top:1px;}
+.module-number{position:absolute;top:11px;right:13px;font-family:'DM Mono',monospace;font-size:10px;color:var(--gray-300);font-weight:500;}
+.module-arrow{position:absolute;bottom:13px;right:13px;opacity:0;transform:translateX(-4px);transition:all .2s;color:var(--blue-500);}
+.module-arrow svg{width:13px;height:13px;}
+
+/* ══════════════════════════════════════
+   MAPA CARGAS — MAIN
+══════════════════════════════════════ */
+#page-mapa-cargas main{max-width:1400px;width:100%;margin:0 auto;padding:36px 40px 80px;display:flex;flex-direction:column;gap:22px;}
+#page-mapa-cargas .page-eyebrow{color:var(--blue-600);}
+#page-mapa-cargas .page-title{font-size:25px;font-weight:800;letter-spacing:-.6px;color:var(--text-primary);line-height:1.15;margin-top:4px;}
+#page-mapa-cargas .page-subtitle{font-size:13.5px;color:var(--text-muted);margin-top:3px;}
+
+/* mc card header */
+.mc-card-header{display:flex;align-items:center;justify-content:space-between;gap:11px;padding:17px 22px 14px;border-bottom:1px solid var(--border);background:var(--surface-2);}
+.mc-card-header-left{display:flex;align-items:center;gap:11px;}
+.mc-card-icon{width:30px;height:30px;border-radius:7px;background:var(--blue-50);border:1px solid var(--blue-100);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.mc-card-icon svg{width:15px;height:15px;color:var(--blue-600);}
+.mc-card-title{font-size:13.5px;font-weight:700;color:var(--text-primary);}
+.mc-card-sub{font-size:11.5px;color:var(--text-muted);margin-top:1px;}
+.mc-card-body{padding:20px 22px;}
+
+/* convention */
+.convention-layout{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:start;}
+.convention-rules{display:flex;flex-direction:column;gap:9px;}
+.rule-row{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:9px;background:var(--surface-2);border:1px solid var(--border);}
+.rule-badge{font-family:'DM Mono',monospace;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;white-space:nowrap;flex-shrink:0;margin-top:1px;}
+.rule-badge.comp{background:var(--green-100);color:var(--green-600);}
+.rule-badge.trac{background:var(--red-100);color:var(--red-500);}
+.rule-badge.info{background:var(--blue-100);color:var(--blue-700);}
+.rule-text{font-size:12px;color:var(--text-secondary);font-weight:500;line-height:1.5;}
+
+/* toggles */
+.toggles-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.tog-label{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);}
+.load-toggle{display:flex;align-items:center;gap:9px;padding:7px 16px 7px 10px;border-radius:30px;border:1.5px solid var(--border);background:var(--surface-2);cursor:pointer;font-size:13px;font-weight:700;color:var(--text-muted);transition:all .2s;user-select:none;}
+.load-toggle:hover{border-color:var(--gray-300);color:var(--text-secondary);}
+.load-toggle.active{background:var(--blue-700);border-color:var(--blue-700);color:#fff;}
+.pip{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
+.load-toggle:not(.active) .pip{background:var(--gray-200);}
+.load-toggle.active .pip{background:rgba(255,255,255,.22);}
+.pip svg{width:10px;height:10px;}
+.load-toggle:not(.active) .pip svg{color:var(--gray-400);}
+.load-toggle.active .pip svg{color:#fff;}
+.tog-unit{font-size:10px;font-weight:500;opacity:.65;margin-left:1px;}
+
+/* stats */
+.stat-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.stat-item{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:12px 16px;}
+.stat-label{font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text-muted);}
+.stat-val{font-family:'DM Mono',monospace;font-size:20px;font-weight:700;color:var(--text-primary);margin-top:2px;}
+.stat-val.tension{color:#dc2626;}
+.stat-val.comp{color:var(--green-600);}
+.stat-unit{font-size:10.5px;color:var(--text-muted);}
+
+/* toolbar */
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+
+/* table */
+.table-wrap{overflow-x:auto;overflow-y:auto;max-height:580px;}
+table{border-collapse:collapse;width:100%;min-width:max-content;}
+thead{position:sticky;top:0;z-index:20;}
+.th-group{padding:5px 6px;background:var(--blue-900);font-size:9.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:rgba(255,255,255,.65);text-align:center;border-right:1px solid rgba(255,255,255,.07);}
+.th-group.base{background:var(--blue-800);}
+.th-group.fz-col{background:#1a3d6e;}
+.th-group.fh-col{background:#1e3d1e;}
+.th-group.mx-col{background:#3d1e4d;}
+.th-group.my-col{background:#1e3d3d;}
+.th-sub{padding:7px 6px;background:var(--gray-100);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--gray-500);text-align:center;border-bottom:2px solid var(--border);border-right:1px solid var(--border);white-space:nowrap;}
+.th-sub.fz-h{background:#f0f6ff;color:var(--blue-700);border-bottom-color:var(--blue-200);}
+.th-sub.fh-h{background:#f0fdf4;color:#15803d;border-bottom-color:#86efac;}
+.th-sub.mx-h{background:#faf5ff;color:#7c3aed;border-bottom-color:#d8b4fe;}
+.th-sub.my-h{background:#ecfeff;color:#0e7490;border-bottom-color:#a5f3fc;}
+tbody tr{border-bottom:1px solid var(--gray-100);transition:background .12s;}
+tbody tr:hover:not(.tr-tension){background:var(--blue-50);}
+tbody tr.tr-tension{background:var(--amber-50);}
+tbody tr.tr-tension:hover{background:#fef9c3;}
+.td-idx{width:40px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--gray-400);padding:4px 2px;}
+.td-del{width:36px;text-align:center;padding:2px;}
+.cell-input{width:100%;border:none;outline:none;background:transparent;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--text-primary);text-align:center;padding:6px 4px;border-radius:4px;transition:background .12s,outline .12s;}
+.cell-input:focus{background:var(--blue-50);outline:2px solid var(--blue-400);outline-offset:-1px;}
+.cell-input.pilar-input{text-align:left;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;font-size:12.5px;padding-left:10px;}
+.cell-input::placeholder{color:var(--gray-300);font-weight:400;}
+.cell-input.fz:focus{background:#eff6ff;outline-color:var(--blue-400);}
+.cell-input.fh:focus{background:#f0fdf4;outline-color:#4ade80;}
+.cell-input.mx:focus{background:#faf5ff;outline-color:#a78bfa;}
+.cell-input.my:focus{background:#ecfeff;outline-color:#22d3ee;}
+.cell-input.fz-pos{color:#1d4ed8;}
+.cell-input.fz-neg{color:#dc2626;font-weight:700;}
+.tension-pill{display:inline-flex;align-items:center;gap:4px;background:var(--amber-100);border:1px solid #fde68a;border-radius:20px;padding:2px 8px;font-size:10.5px;font-weight:700;color:var(--amber-700);white-space:nowrap;}
+.del-btn{width:26px;height:26px;border-radius:6px;border:none;background:transparent;cursor:pointer;color:var(--gray-300);display:flex;align-items:center;justify-content:center;transition:all .15s;padding:0;}
+.del-btn:hover{background:var(--red-100);color:#dc2626;}
+.del-btn svg{width:13px;height:13px;}
+.bottom-bar{display:flex;justify-content:space-between;align-items:center;padding:12px 22px 16px;}
+.row-count{font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);}
+.legend{display:flex;flex-wrap:wrap;gap:14px;align-items:center;padding:9px 14px;background:var(--amber-50);border:1px solid #fde68a;border-radius:9px;font-size:12px;color:var(--amber-700);font-weight:600;margin:10px 22px 0;}
+.legend-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════ */
+@media(max-width:960px){
+  header{padding:0 20px;}
+  #page-home main{padding:28px 20px 48px;}
+  .modules-grid{grid-template-columns:repeat(3,1fr);}
+}
+@media(max-width:760px){
+  #page-mapa-cargas main{padding:24px 16px 60px;}
+  .stat-bar{grid-template-columns:1fr 1fr;}
+  .convention-layout{grid-template-columns:1fr;}
+}
+@media(max-width:640px){
+  .modules-grid{grid-template-columns:repeat(2,1fr);}
+  .form-grid-2{grid-template-columns:1fr;}
+  .form-actions{flex-direction:column-reverse;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     HOME PAGE
+══════════════════════════════════ -->
+<div id="page-home" class="page">
+
+  <header>
+    <button class="logo" onclick="void(0)">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+          <polyline points="2 17 12 22 22 17"/>
+          <polyline points="2 12 12 17 22 12"/>
+        </svg>
+      </div>
+      <span class="logo-text">Geo<span>Founder</span></span>
+    </button>
+    <span class="header-badge">v1.0 · Eng. V. Tadeu</span>
+  </header>
+
+  <main>
+
+    <!-- Page Title -->
+    <div class="page-title-block fade-up">
+      <span class="page-eyebrow">Novo Projeto</span>
+      <h1 class="page-title">Cálculo &amp; Projeto de Fundações Profundas</h1>
+      <p class="page-subtitle">Preencha os dados do empreendimento para iniciar o dimensionamento.</p>
+    </div>
+
+    <!-- Project Info Card -->
+    <div class="card fade-up delay-1">
+      <div class="card-header">
+        <div class="card-header-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+        </div>
+        <div>
+          <div class="card-header-title">Dados do Empreendimento</div>
+          <div class="card-header-sub">Identificação do projeto e responsável técnico</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Cliente / Contratante</label>
+            <input class="form-input" id="cliente" type="text" placeholder="Nome do cliente ou empresa…">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Empreendimento / Obra</label>
+            <input class="form-input" id="obra" type="text" placeholder="Ex.: Residencial Horizonte — Fase 2…">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cidade</label>
+            <input class="form-input" id="cidade" type="text" placeholder="Ex.: Belo Horizonte…">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Estado</label>
+            <select class="form-select" id="estado">
+              <option value="">Selecione o estado…</option>
+              <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
+              <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+              <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+              <option selected>MG</option><option>PA</option><option>PB</option><option>PR</option>
+              <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+              <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+              <option>SP</option><option>SE</option><option>TO</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Torres Card -->
+    <div class="card fade-up delay-2">
+      <div class="card-header">
+        <div class="card-header-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+          </svg>
+        </div>
+        <div>
+          <div class="card-header-title">Torres / Blocos</div>
+          <div class="card-header-sub">Quantidade total e identificação da estrutura em análise</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="form-grid form-grid-2" style="align-items:start">
+          <div class="form-group">
+            <label class="form-label">Quantidade de Torres / Blocos</label>
+            <div class="input-number-group">
+              <button class="num-btn" onclick="alterarTorres(-1)">−</button>
+              <input class="num-input" id="numTorres" type="number" value="1" min="1" max="20" readonly>
+              <button class="num-btn" onclick="alterarTorres(1)">+</button>
+            </div>
+            <div class="field-hint">Número total de blocos/torres no empreendimento.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Torre / Bloco em Análise</label>
+            <div class="bloco-input-wrap">
+              <span class="bloco-input-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+              </span>
+              <input class="form-input bloco-input" id="nomeBloco" type="text" placeholder="Ex.: Bloco A, Torre 1, Bloco Norte…">
+            </div>
+            <div class="field-hint">Nome ou identificação da estrutura que está sendo dimensionada.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="form-actions fade-up delay-2">
+      <button class="home-btn home-btn-secondary" onclick="limparForm()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        Limpar
+      </button>
+      <button class="home-btn home-btn-primary" onclick="salvarProjeto()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Salvar &amp; Continuar
+      </button>
+    </div>
+
+    <!-- Status bar -->
+    <div class="status-bar" id="statusBar" style="display:none">
+      <div class="status-dot"></div>
+      <span id="statusText">Projeto configurado. Selecione um módulo abaixo para iniciar.</span>
+    </div>
+
+    <!-- Modules -->
+    <div class="modules-section fade-up delay-3">
+      <div class="modules-heading">Módulos do Projeto</div>
+      <div class="modules-grid" id="modulesGrid"></div>
+    </div>
+
+  </main>
+</div><!-- /page-home -->
+
+
+<!-- ══════════════════════════════════
+     MAPA DE CARGAS PAGE
+══════════════════════════════════ -->
+<div id="page-mapa-cargas" class="page page-hidden">
+
+  <header>
+    <button class="logo" onclick="showPage('home')">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+          <polyline points="2 17 12 22 22 17"/>
+          <polyline points="2 12 12 17 22 12"/>
+        </svg>
+      </div>
+      <span class="logo-text">Geo<span>Founder</span></span>
+    </button>
+    <div class="header-right">
+      <button class="btn-back" onclick="showPage('home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Voltar
+      </button>
+      <span class="header-badge">v1.0 · Eng. V. Tadeu</span>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Title -->
+    <div class="fade-up">
+      <div class="page-eyebrow">Módulo 04 — Mapa de Cargas</div>
+      <h1 class="page-title">Lançamento de Cargas nos Pilares</h1>
+      <p class="page-subtitle">
+        Ative os tipos de carga necessários e lance os valores. Use
+        <kbd style="background:var(--gray-200);padding:1px 5px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;">Enter</kbd>
+        ou
+        <kbd style="background:var(--gray-200);padding:1px 5px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;">Tab</kbd>
+        para navegar entre campos rapidamente.
+      </p>
+    </div>
+
+    <!-- Convention -->
+    <div class="card fade-up d1">
+      <div class="mc-card-header">
+        <div class="mc-card-header-left">
+          <div class="mc-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div>
+            <div class="mc-card-title">Sistema de Eixos e Convenção de Sinais</div>
+            <div class="mc-card-sub">Referência antes de lançar as cargas</div>
+          </div>
+        </div>
+      </div>
+      <div class="mc-card-body">
+        <div class="convention-layout">
+          <!-- Axis SVG -->
+          <svg width="190" height="190" viewBox="0 0 190 190" xmlns="http://www.w3.org/2000/svg">
+            <rect x="25" y="155" width="140" height="12" fill="#e2e8f0" rx="2"/>
+            <line x1="25" y1="155" x2="165" y2="155" stroke="#94a3b8" stroke-width="1.5"/>
+            <line x1="33" y1="155" x2="25" y2="164" stroke="#94a3b8" stroke-width="1"/>
+            <line x1="47" y1="155" x2="39" y2="164" stroke="#94a3b8" stroke-width="1"/>
+            <line x1="61" y1="155" x2="53" y2="164" stroke="#94a3b8" stroke-width="1"/>
+            <line x1="75" y1="155" x2="67" y2="164" stroke="#94a3b8" stroke-width="1"/>
+            <line x1="89" y1="155" x2="81" y2="164" stroke="#94a3b8" stroke-width="1"/>
+            <line x1="103" y1="155" x2="95" y2="164" stroke="#94a3b8" stroke-width="1"/>
+            <line x1="117" y1="155" x2="109" y2="164" stroke="#94a3b8" stroke-width="1"/>
+            <line x1="131" y1="155" x2="123" y2="164" stroke="#94a3b8" stroke-width="1"/>
+            <line x1="145" y1="155" x2="137" y2="164" stroke="#94a3b8" stroke-width="1"/>
+            <line x1="159" y1="155" x2="151" y2="164" stroke="#94a3b8" stroke-width="1"/>
+            <rect x="87" y="82" width="16" height="73" fill="#bdd8ff" rx="2" opacity=".7"/>
+            <rect x="87" y="82" width="16" height="73" fill="none" stroke="#4f9aff" stroke-width="1.2" rx="2"/>
+            <rect x="91" y="32" width="8" height="52" fill="#1e4d94" rx="2"/>
+            <line x1="95" y1="8" x2="95" y2="31" stroke="#1d4ed8" stroke-width="2.5" stroke-linecap="round"/>
+            <polygon points="95,32 90,20 100,20" fill="#1d4ed8"/>
+            <text x="102" y="17" font-family="DM Mono,monospace" font-size="10" font-weight="700" fill="#1d4ed8">Fz(+)</text>
+            <line x1="34" y1="60" x2="90" y2="60" stroke="#15803d" stroke-width="2" stroke-linecap="round"/>
+            <polygon points="91,60 79,55 79,65" fill="#15803d"/>
+            <text x="20" y="55" font-family="DM Mono,monospace" font-size="9.5" font-weight="700" fill="#15803d">Fh(+)</text>
+            <path d="M 112 78 A 16 16 0 0 1 128 62" stroke="#7c3aed" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+            <polygon points="128,62 120,54 130,56" fill="#7c3aed"/>
+            <text x="132" y="72" font-family="DM Mono,monospace" font-size="9.5" font-weight="700" fill="#7c3aed">Mx(+)</text>
+            <path d="M 95 78 A 16 16 0 0 0 111 62" stroke="#0e7490" stroke-width="2" fill="none" stroke-linecap="round" stroke-dasharray="4,2.5"/>
+            <polygon points="111,62 104,54 114,57" fill="#0e7490"/>
+            <text x="76" y="96" font-family="DM Mono,monospace" font-size="9.5" font-weight="700" fill="#0e7490">My(+)</text>
+            <text x="8" y="145" font-family="DM Mono,monospace" font-size="10" font-weight="700" fill="#475569">Z↑</text>
+            <text x="150" y="145" font-family="DM Mono,monospace" font-size="10" font-weight="700" fill="#475569">X→</text>
+          </svg>
+          <!-- Rules -->
+          <div class="convention-rules">
+            <div class="rule-row">
+              <span class="rule-badge comp">+ COMPRESSÃO</span>
+              <span class="rule-text"><strong>Fz positivo</strong> — força vertical descendente (compressão). Caso mais comum: peso da estrutura transferido para a fundação.</span>
+            </div>
+            <div class="rule-row">
+              <span class="rule-badge trac">− TRAÇÃO</span>
+              <span class="rule-text"><strong>Fz negativo</strong> — força vertical ascendente (uplift / tração). Pilares tracionados ficam <span style="background:var(--amber-100);color:var(--amber-700);padding:1px 5px;border-radius:3px;font-weight:700;">destacados em amarelo</span> e exigem verificação especial das estacas.</span>
+            </div>
+            <div class="rule-row">
+              <span class="rule-badge" style="background:#ede9fe;color:#6d28d9;">Mx / My</span>
+              <span class="rule-text"><strong>Momentos</strong> seguem a regra da mão direita. Fh é a resultante horizontal no topo da fundação. Os sinais seguem a direção positiva dos eixos conforme o diagrama ao lado.</span>
+            </div>
+            <div class="rule-row">
+              <span class="rule-badge info">ARRED.</span>
+              <span class="rule-text">Todos os valores são arredondados para cima (teto, sem casas decimais) ao sair do campo. Ex: 125,3 kN → <strong>126 kN</strong> · −80,7 kN → <strong>−81 kN</strong>.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toggles -->
+    <div class="card fade-up d2">
+      <div class="mc-card-header">
+        <div class="mc-card-header-left">
+          <div class="mc-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h6"/></svg>
+          </div>
+          <div>
+            <div class="mc-card-title">Tipos de Carga Ativos</div>
+            <div class="mc-card-sub">Fz é sempre obrigatório — ative os demais conforme disponível no projeto</div>
+          </div>
+        </div>
+      </div>
+      <div class="mc-card-body">
+        <div class="toggles-row">
+          <span class="tog-label">Colunas:</span>
+          <div class="load-toggle active" style="cursor:default;opacity:.75;pointer-events:none;">
+            <div class="pip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <span>Fz</span><span class="tog-unit">kN</span>
+          </div>
+          <div class="load-toggle" id="tog-fh" onclick="toggleLoad('fh')">
+            <div class="pip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </div>
+            <span>Fh</span><span class="tog-unit">kN</span>
+          </div>
+          <div class="load-toggle" id="tog-mx" onclick="toggleLoad('mx')">
+            <div class="pip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </div>
+            <span>Mx</span><span class="tog-unit">kN·m</span>
+          </div>
+          <div class="load-toggle" id="tog-my" onclick="toggleLoad('my')">
+            <div class="pip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </div>
+            <span>My</span><span class="tog-unit">kN·m</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-bar fade-up d2">
+      <div class="stat-item">
+        <div class="stat-label">Pilares Cadastrados</div>
+        <div class="stat-val" id="stat-total">0</div>
+        <div class="stat-unit">pilares</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Σ Fz Total</div>
+        <div class="stat-val comp" id="stat-sumfz">0</div>
+        <div class="stat-unit">kN</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Pilares Tracionados</div>
+        <div class="stat-val tension" id="stat-trac">0</div>
+        <div class="stat-unit">⚠ verificar</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Maior Fz</div>
+        <div class="stat-val" id="stat-maxfz">—</div>
+        <div class="stat-unit">kN</div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card fade-up d3">
+      <div class="mc-card-header">
+        <div class="mc-card-header-left">
+          <div class="mc-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+          </div>
+          <div>
+            <div class="mc-card-title">Tabela de Cargas por Pilar</div>
+            <div class="mc-card-sub">Navegue com Enter / Tab · Arredondamento automático ao sair do campo</div>
+          </div>
+        </div>
+        <div class="toolbar">
+          <button class="btn btn-ghost" onclick="addRows(5)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            +5 linhas
+          </button>
+          <button class="btn btn-ghost" onclick="clearEmpty()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            Limpar vazias
+          </button>
+          <button class="btn btn-ghost" onclick="exportarDados()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exportar JSON
+          </button>
+        </div>
+      </div>
+
+      <!-- Tension legend -->
+      <div class="legend">
+        <div class="legend-dot" style="background:var(--amber-100);border:1px solid #fde68a;"></div>
+        <span>Linha amarela = Fz negativo (tração) — requer verificação da estaca</span>
+        <div class="legend-dot" style="background:#dbeafe;border:1px solid #93c5fd;margin-left:10px;"></div>
+        <span style="color:var(--blue-700);">Fz positivo = compressão ✓</span>
+        <div class="legend-dot" style="background:var(--red-100);border:1px solid #fca5a5;margin-left:10px;"></div>
+        <span style="color:#dc2626;">Fz negativo = tração !</span>
+      </div>
+
+      <div style="padding:12px 22px 0;">
+        <div class="table-wrap">
+          <table id="loadTable">
+            <thead id="mc-thead"></thead>
+            <tbody id="mc-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bottom-bar">
+        <span class="row-count" id="rowCountLabel">0 pilares</span>
+        <button class="btn btn-primary" onclick="addRows(1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adicionar Pilar
+        </button>
+      </div>
+    </div>
+
+  </main>
+</div><!-- /page-mapa-cargas -->
+
+
+<!-- ══════════════════════════════════
+     SHARED TOAST
+══════════════════════════════════ -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+  <span id="toastMsg">Projeto salvo com sucesso!</span>
+</div>
+
+
+<script>
+/* ══════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════ */
+function showPage(page) {
+  document.getElementById('page-home').classList.toggle('page-hidden', page !== 'home');
+  document.getElementById('page-mapa-cargas').classList.toggle('page-hidden', page !== 'mapa-cargas');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ══════════════════════════════════════
+   SHARED TOAST
+══════════════════════════════════════ */
+let toastTimer;
+function showToast(msg, err = false) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.style.background = err ? '#7f1d1d' : 'var(--blue-800)';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+/* ══════════════════════════════════════
+   HOME — MODULES LIST
+   04 = Mapa de Cargas (new)
+   05 = Definição de Diâmetros (was 04)
+   ...
+   13 = Planejamento (was 12)
+══════════════════════════════════════ */
+const B = "var(--blue-600)";
+const modules = [
+  {
+    n:'01', key:'entrada-sondagens',
+    icon:`<svg viewBox="0 0 24 24" fill="none" stroke="${B}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
+    label:'Entrada de Sondagens', desc:'Inserção e gerenciamento de laudos SPT/CPT'
+  },
+  {
+    n:'02', key:'perfil-sondagem',
+    icon:`<svg viewBox="0 0 24 24" fill="none" stroke="${B}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="3.5" rx="1"/><rect x="2" y="9.5" width="20" height="3.5" rx="1"/><rect x="2" y="16" width="20" height="3.5" rx="1"/><line x1="12" y1="6.5" x2="12" y2="9.5"/><line x1="12" y1="13" x2="12" y2="16"/></svg>`,
+    label:'Perfil de Sondagem', desc:'Visualização gráfica das camadas do solo'
+  },
+  {
+    n:'03', key:'capacidade-carga',
+    icon:`<svg viewBox="0 0 24 24" fill="none" stroke="${B}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+    label:'Capacidade de Carga', desc:'Aoki-Velloso, Décourt-Quaresma e outros'
+  },
+  {
+    n:'04', key:'mapa-cargas',
+    icon:`<svg viewBox="0 0 24 24" fill="none" stroke="${B}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/><line x1="14" y1="6" x2="14" y2="6.01"/><line x1="17" y1="6" x2="17" y2="6.01"/></svg>`,
+    label:'Mapa de Cargas', desc:'Lançamento de cargas verticais e horizontais nos pilares'
+  },
+  {
+    n:'05', key:'def-diametros',
+    icon:`<svg viewBox="0 0 24 24" fill="none" stroke="${B}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="4.93" y1="4.93" x2="9.17" y2="9.17"/><line x1="14.83" y1="14.83" x2="19.07" y2="19.07"/><line x1="14.83" y1="9.17" x2="19.07" y2="4.93"/><line x1="4.93" y1="19.07" x2="9.17" y2="14.83"/></svg>`,
+    label:'Definição de Diâmetros', desc:'Escolha dos diâmetros das estacas por pilar'
+  },
+  {
+    n:'06', key:'associar-pilares',
+    icon:`<svg viewBox="0 0 24 24" fill="none" stroke="${B}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
+    label:'Associar Pilares', desc:'Vinculação de pilares às estacas e blocos'
+  },
+  {
+    n:'07', key:'blocos-estacas',
+    icon:`<svg viewBox="0 0 24 24" fill="none" stroke="${B}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
+    label:'Blocos de Estacas', desc:'Dimensionamento e verificação de blocos'
+  },
+  {
+    n:'08', key:'def-comprimentos',
+    icon:`<svg viewBox="0 0 24 24" fill="none" stroke="${B}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M8 6h8"/><path d="M8 10h8"/><path d="M8 14h8"/><path d="M8 18h5"/></svg>`,
+    label:'Definição de Comprimentos', desc:'Comprimento definitivo de cada estaca'
+  },
+  {
+    n:'09', key:'distrib-estacas',
+    icon:`<svg viewBox="0 0 24 24" fill="none" stroke="${B}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="19" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><line x1="5" y1="7" x2="5" y2="10"/><line x1="12" y1="7" x2="12" y2="10"/><line x1="19" y1="7" x2="19" y2="10"/><line x1="3" y1="5" x2="21" y2="5"/></svg>`,
+    label:'Distribuição de Estacas', desc:'Layout e espaçamento das estacas em planta'
+  },
+  {
+    n:'10', key:'qtv-aco',
+    icon:`<svg viewBox="0 0 24 24" fill="none" stroke="${B}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    label:'Quantitativo de Aço', desc:'Armadura longitudinal e transversal'
+  },
+  {
+    n:'11', key:'qtv-concreto',
+    icon:`<svg viewBox="0 0 24 24" fill="none" stroke="${B}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>`,
+    label:'Quantitativo de Concreto', desc:'Volume de concreto das estacas e blocos'
+  },
+  {
+    n:'12', key:'estimativa-custos',
+    icon:`<svg viewBox="0 0 24 24" fill="none" stroke="${B}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 6"/></svg>`,
+    label:'Estimativa de Custos', desc:'BDI, mão de obra e insumos por item'
+  },
+  {
+    n:'13', key:'planejamento',
+    icon:`<svg viewBox="0 0 24 24" fill="none" stroke="${B}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg>`,
+    label:'Planejamento', desc:'Cronograma físico-financeiro da obra'
+  },
+  {
+    n:'14', key:'execucao',
+    icon:`<svg viewBox="0 0 24 24" fill="none" stroke="${B}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`,
+    label:'Execução', desc:'Acompanhamento e controle da execução em campo'
+  },
+  {
+    n:'15', key:'consultoria',
+    icon:`<svg viewBox="0 0 24 24" fill="none" stroke="${B}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+    label:'Consultoria', desc:'Laudos técnicos, pareceres e assessoria especializada'
+  },
+  {
+    n:'16', key:'detalhes-dwg',
+    icon:`<svg viewBox="0 0 24 24" fill="none" stroke="${B}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+    label:'Detalhes DWG', desc:'Pranchas e detalhamentos técnicos em AutoCAD'
+  },
+];
+
+/* ══════════════════════════════════════
+   HOME — STATE
+══════════════════════════════════════ */
+let numTorres = 1;
+
+function alterarTorres(delta) {
+  const novo = numTorres + delta;
+  if (novo < 1 || novo > 20) return;
+  numTorres = novo;
+  document.getElementById('numTorres').value = numTorres;
+}
+
+/* ══════════════════════════════════════
+   HOME — RENDER MODULES
+══════════════════════════════════════ */
+function renderModules() {
+  const grid = document.getElementById('modulesGrid');
+  grid.innerHTML = '';
+  modules.forEach(m => {
+    const el = document.createElement('div');
+    const integrated = m.key === 'mapa-cargas';
+    el.className = 'module-btn' + (integrated ? '' : ' disabled');
+    el.innerHTML = `
+      <div class="module-number">${m.n}</div>
+      <div class="module-icon">${m.icon}</div>
+      <div>
+        <div class="module-label">${m.label}</div>
+        <div class="module-desc">${m.desc}</div>
+      </div>
+      <div class="module-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </div>`;
+    if (integrated) {
+      el.onclick = () => showPage('mapa-cargas');
+    } else {
+      el.onclick = () => showToast(`Módulo "${m.label}" — em breve!`);
+    }
+    grid.appendChild(el);
+  });
+}
+
+function habilitarModulos() {
+  document.querySelectorAll('.module-btn').forEach(b => b.classList.remove('disabled'));
+}
+
+/* ══════════════════════════════════════
+   HOME — SAVE / CLEAR
+══════════════════════════════════════ */
+function salvarProjeto() {
+  const cliente = document.getElementById('cliente').value.trim();
+  const obra    = document.getElementById('obra').value.trim();
+  const cidade  = document.getElementById('cidade').value.trim();
+  const estado  = document.getElementById('estado').value;
+  const bloco   = document.getElementById('nomeBloco').value.trim();
+  if (!cliente || !obra || !cidade || !estado) {
+    showToast('Preencha todos os campos do empreendimento.', true); return;
+  }
+  habilitarModulos();
+  const sb = document.getElementById('statusBar');
+  sb.style.display = 'flex';
+  const blocoLabel = bloco ? ` · ${bloco}` : '';
+  document.getElementById('statusText').textContent =
+    `${obra} · ${cidade}/${estado}${blocoLabel} · ${numTorres} torre${numTorres > 1 ? 's' : ''} — selecione um módulo para começar.`;
+  showToast('Projeto salvo! Módulos liberados.');
+}
+
+function limparForm() {
+  ['cliente','obra','cidade','nomeBloco'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('estado').value = '';
+  numTorres = 1;
+  document.getElementById('numTorres').value = 1;
+  document.getElementById('statusBar').style.display = 'none';
+  document.querySelectorAll('.module-btn').forEach(b => b.classList.add('disabled'));
+}
+
+/* ══════════════════════════════════════
+   MAPA CARGAS — STATE
+══════════════════════════════════════ */
+const active = { fh: false, mx: false, my: false };
+let rows = [];
+let nextId = 1;
+
+/* ══════════════════════════════════════
+   MAPA CARGAS — COLUMNS
+══════════════════════════════════════ */
+function getCols() {
+  const c = [
+    { key:'idx',   label:'#',     sub:'',         grp:'',               cls:'',       inputCls:'' },
+    { key:'pilar', label:'Pilar', sub:'Nome / ID', grp:'Identificação',  cls:'base',   inputCls:'pilar-input' },
+    { key:'fz',    label:'Fz',    sub:'[kN]',      grp:'Força Vertical', cls:'fz-col', inputCls:'fz' },
+  ];
+  if (active.fh) c.push({ key:'fh', label:'Fh', sub:'[kN]',   grp:'F. Horizontal', cls:'fh-col', inputCls:'fh' });
+  if (active.mx) c.push({ key:'mx', label:'Mx', sub:'[kN·m]', grp:'Momento X',     cls:'mx-col', inputCls:'mx' });
+  if (active.my) c.push({ key:'my', label:'My', sub:'[kN·m]', grp:'Momento Y',     cls:'my-col', inputCls:'my' });
+  c.push({ key:'del', label:'', sub:'', grp:'', cls:'', inputCls:'' });
+  return c;
+}
+
+/* ══════════════════════════════════════
+   MAPA CARGAS — TOGGLES
+══════════════════════════════════════ */
+function toggleLoad(key) {
+  active[key] = !active[key];
+  const el = document.getElementById(`tog-${key}`);
+  el.classList.toggle('active', active[key]);
+  const pip = el.querySelector('.pip');
+  pip.innerHTML = active[key]
+    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+  renderMcHeader();
+  renderRows();
+}
+
+/* ══════════════════════════════════════
+   MAPA CARGAS — TABLE HEADER
+══════════════════════════════════════ */
+const thGroupCls = { '':'th-group', base:'th-group', 'fz-col':'th-group fz-col', 'fh-col':'th-group fh-col', 'mx-col':'th-group mx-col', 'my-col':'th-group my-col' };
+const thSubCls   = { '':'th-sub',   base:'th-sub',   'fz-col':'th-sub fz-h',     'fh-col':'th-sub fh-h',     'mx-col':'th-sub mx-h',     'my-col':'th-sub my-h' };
+
+function renderMcHeader() {
+  const cols = getCols();
+  let grpRow = '<tr>';
+  let subRow = '<tr>';
+  cols.forEach(c => {
+    const gCls = thGroupCls[c.cls] || 'th-group';
+    const sCls = thSubCls[c.cls]   || 'th-sub';
+    const minW = c.key === 'pilar' ? '120' : c.key === 'idx' ? '40' : c.key === 'del' ? '36' : '100';
+    grpRow += `<th class="${gCls}" style="padding:5px 6px;${c.key==='pilar'?'text-align:left;':''}">${c.grp}</th>`;
+    subRow += `<th class="${sCls}" style="min-width:${minW}px;">${c.sub || c.label}</th>`;
+  });
+  document.getElementById('mc-thead').innerHTML = grpRow + '</tr>' + subRow + '</tr>';
+}
+
+/* ══════════════════════════════════════
+   MAPA CARGAS — ROWS
+══════════════════════════════════════ */
+function makeRow() {
+  return { id: nextId++, pilar:'', fz:'', fh:'', mx:'', my:'' };
+}
+
+function addRows(n) {
+  for (let i = 0; i < n; i++) rows.push(makeRow());
+  renderRows();
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('.pilar-input');
+    for (const inp of inputs) { if (!inp.value.trim()) { inp.focus(); break; } }
+  }, 30);
+}
+
+function deleteRow(id) {
+  rows = rows.filter(r => r.id !== id);
+  if (rows.length === 0) rows.push(makeRow());
+  renderRows();
+  updateStats();
+}
+
+function clearEmpty() {
+  const before = rows.length;
+  rows = rows.filter(r => r.pilar.trim() || r.fz !== '');
+  if (rows.length === 0) rows.push(makeRow());
+  renderRows();
+  updateStats();
+  showToast(`${before - rows.length} linha(s) vazia(s) removida(s)`);
+}
+
+function ceilRound(val) {
+  const n = parseFloat(val);
+  if (isNaN(n) || String(val).trim() === '') return '';
+  return n >= 0 ? Math.ceil(n) : Math.floor(n);
+}
+
+function isTension(row) {
+  return row.fz !== '' && parseFloat(row.fz) < 0;
+}
+
+function renderRows() {
+  const cols = getCols();
+  const tbody = document.getElementById('mc-tbody');
+  tbody.innerHTML = '';
+
+  rows.forEach((row, idx) => {
+    const tension = isTension(row);
+    const tr = document.createElement('tr');
+    tr.dataset.id = row.id;
+    if (tension) tr.classList.add('tr-tension');
+
+    cols.forEach(c => {
+      const td = document.createElement('td');
+      td.style.padding = '0';
+
+      if (c.key === 'idx') {
+        td.className = 'td-idx';
+        td.textContent = idx + 1;
+      } else if (c.key === 'del') {
+        td.className = 'td-del';
+        td.innerHTML = `<button class="del-btn" onclick="deleteRow(${row.id})" title="Remover">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>`;
+      } else if (c.key === 'pilar') {
+        const inp = makeCellInput(row, c, cols);
+        inp.style.paddingLeft = '10px';
+        td.appendChild(inp);
+      } else {
+        if (c.key === 'fz' && tension) {
+          const wrap = document.createElement('div');
+          wrap.style.cssText = 'display:flex;align-items:center;gap:4px;padding-right:6px;';
+          const inp = makeCellInput(row, c, cols);
+          wrap.appendChild(inp);
+          const pill = document.createElement('span');
+          pill.className = 'tension-pill';
+          pill.textContent = '⚠ TRAÇÃO';
+          wrap.appendChild(pill);
+          td.appendChild(wrap);
+        } else {
+          td.appendChild(makeCellInput(row, c, cols));
+        }
+      }
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+
+  updateStats();
+}
+
+function makeCellInput(row, c, cols) {
+  const inp = document.createElement('input');
+  inp.className = 'cell-input ' + c.inputCls;
+  inp.type = c.key === 'pilar' ? 'text' : 'number';
+  inp.step = 'any';
+  inp.placeholder = c.key === 'pilar' ? `P${String(rows.findIndex(r=>r.id===row.id)+1).padStart(2,'0')}` : '—';
+  inp.value = row[c.key];
+  if (c.key === 'fz') inp.classList.toggle('fz-neg', row.fz !== '' && parseFloat(row.fz) < 0);
+  inp.dataset.rowid = row.id;
+  inp.dataset.col = c.key;
+
+  inp.addEventListener('input', () => { updateField(row.id, c.key, inp.value); });
+  inp.addEventListener('blur', () => {
+    if (c.key !== 'pilar') {
+      const r = ceilRound(inp.value);
+      inp.value = r;
+      updateField(row.id, c.key, r === '' ? '' : String(r));
+    }
+  });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) {
+      e.preventDefault(); navigateNext(inp, cols, false);
+    }
+    if (e.key === 'Tab' && e.shiftKey) {
+      e.preventDefault(); navigateNext(inp, cols, true);
+    }
+  });
+  return inp;
+}
+
+function navigateNext(inp, cols, reverse) {
+  const all = Array.from(document.querySelectorAll('#mc-tbody .cell-input'));
+  const i = all.indexOf(inp);
+  if (i === -1) return;
+  const next = reverse ? all[i - 1] : all[i + 1];
+  if (next) { next.focus(); next.select && next.select(); }
+  else if (!reverse) addRows(1);
+}
+
+function updateField(id, col, val) {
+  const row = rows.find(r => r.id === id);
+  if (!row) return;
+  row[col] = val;
+  const tr = document.querySelector(`#mc-tbody tr[data-id="${id}"]`);
+  if (!tr) return;
+  const tension = isTension(row);
+  tr.classList.toggle('tr-tension', tension);
+  const fzInp = tr.querySelector('.fz');
+  if (fzInp) {
+    fzInp.classList.toggle('fz-neg', tension);
+    const fzTd = fzInp.closest('td');
+    if (fzTd) {
+      if (tension) {
+        if (!fzTd.querySelector('.tension-pill')) {
+          const pill = document.createElement('span');
+          pill.className = 'tension-pill';
+          pill.textContent = '⚠ TRAÇÃO';
+          fzTd.firstElementChild?.appendChild?.(pill);
+        }
+      } else {
+        fzTd.querySelector('.tension-pill')?.remove();
+      }
+    }
+  }
+  updateStats();
+}
+
+/* ══════════════════════════════════════
+   MAPA CARGAS — STATS
+══════════════════════════════════════ */
+function updateStats() {
+  const filled = rows.filter(r => r.fz !== '');
+  let total = 0, trac = 0, maxFz = null;
+  filled.forEach(r => {
+    const v = parseFloat(r.fz) || 0;
+    total += v;
+    if (v < 0) trac++;
+    if (maxFz === null || v > maxFz) maxFz = v;
+  });
+  const withPilar = rows.filter(r => r.pilar.trim() || r.fz !== '').length;
+  document.getElementById('stat-total').textContent  = withPilar;
+  document.getElementById('stat-sumfz').textContent  = total ? total.toLocaleString('pt-BR') : '0';
+  document.getElementById('stat-sumfz').className    = 'stat-val ' + (total < 0 ? 'tension' : 'comp');
+  document.getElementById('stat-trac').textContent   = trac;
+  document.getElementById('stat-maxfz').textContent  = maxFz !== null ? maxFz.toLocaleString('pt-BR') : '—';
+  document.getElementById('rowCountLabel').textContent = `${withPilar} pilar${withPilar !== 1 ? 'es' : ''} cadastrado${withPilar !== 1 ? 's' : ''}`;
+}
+
+/* ══════════════════════════════════════
+   MAPA CARGAS — EXPORT
+══════════════════════════════════════ */
+function exportarDados() {
+  const out = rows
+    .filter(r => r.pilar.trim() || r.fz !== '')
+    .map(r => {
+      const obj = { pilar: r.pilar, fz: r.fz !== '' ? Number(r.fz) : null, traction: isTension(r) };
+      if (active.fh) obj.fh = r.fh !== '' ? Number(r.fh) : null;
+      if (active.mx) obj.mx = r.mx !== '' ? Number(r.mx) : null;
+      if (active.my) obj.my = r.my !== '' ? Number(r.my) : null;
+      return obj;
+    });
+  const blob = new Blob([JSON.stringify(out, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'mapa_cargas.json';
+  a.click();
+  showToast('Mapa de cargas exportado com sucesso!');
+}
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+renderModules();
+renderMcHeader();
+addRows(10);
+</script>
+</body>
+</html>
