@@ -10,3 +10,4 @@ Estimativa de Custos (Módulo 12) — a partir dos quantitativos, o usuário inf
 fazer upload da planta desenhada verificar 2,5Diametros
 estacas tracionadas
 estacas com carga horizontal e momento fletor
+quantitativos estacas cravadas, quantos elementos, peso...
