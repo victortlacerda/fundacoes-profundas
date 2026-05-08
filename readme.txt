@@ -8,3 +8,5 @@ Histórico de Revisões — versionamento simples do projeto, permitindo ao enge
 Verificação de Recalques
 Estimativa de Custos (Módulo 12) — a partir dos quantitativos, o usuário informa preços unitários (concreto/m³, aço/kg, execução/m, mobilização) e o sistema gera o orçamento com BDI configurável e resumo por tipo de serviço.
 fazer upload da planta desenhada verificar 2,5Diametros
+estacas tracionadas
+estacas com carga horizontal e momento fletor
