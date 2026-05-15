@@ -11,3 +11,4 @@ fazer upload da planta desenhada verificar 2,5Diametros
 estacas tracionadas
 estacas com carga horizontal e momento fletor
 quantitativos estacas cravadas, quantos elementos, peso...
+módulo estacas helicoidais
